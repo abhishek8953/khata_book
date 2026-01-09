@@ -7,6 +7,8 @@ import Alert from "../components/Alert";
 import { Button, Input, Select, Checkbox } from "../components/FormElements";
 import { transactionAPI, customerAPI, productAPI } from "../utils/api";
 
+//your name is abhishek tiwari;
+
 const Transactions = () => {
 	const { t } = useTranslation();
 	const [transactions, setTransactions] = useState([]);
@@ -36,11 +38,24 @@ const Transactions = () => {
 		applyInterest: false,
 		interestRate: "",
 		interestDuration: "",
-		interestTimeUnit: "months"
+		interestTimeUnit: "months",
 	});
-  
-	const [selectedCustomerBalance, setSelectedCustomerBalance] = useState(null);
+
+	const [selectedCustomerBalance, setSelectedCustomerBalance] =
+		useState(null);
 	const [calculatedInterest, setCalculatedInterest] = useState(0);
+	const [addedProducts, setAddedProducts] = useState([]);
+	const [tempProductForm, setTempProductForm] = useState({
+		productId: "",
+		quantity: "",
+		pricePerUnit: "",
+	});
+	const [productSearch, setProductSearch] = useState("");
+	const [searchDebounceTimer, setSearchDebounceTimer] = useState(null);
+	const [filteredProducts, setFilteredProducts] = useState([]);
+	const [customerSearch, setCustomerSearch] = useState("");
+	const [customerDebounceTimer, setCustomerDebounceTimer] = useState(null);
+	const [filteredCustomers, setFilteredCustomers] = useState([]);
 
 	const transactionTypes = [
 		{ value: "purchase", label: t("purchase") },
@@ -50,16 +65,71 @@ const Transactions = () => {
 	const timeUnitOptions = [
 		{ value: "days", label: "Days" },
 		{ value: "months", label: "Months" },
-		{ value: "years", label: "Years" }
+		{ value: "years", label: "Years" },
 	];
 
 	useEffect(() => {
 		fetchInitialData();
 	}, []);
-	
+
 	useEffect(() => {
 		calculateAmount();
-	}, [formData.pricePerUnit, formData.quantity]);
+	}, [formData.pricePerUnit, formData.quantity, addedProducts]);
+
+	// Initialize filtered products on component mount or when products change
+	useEffect(() => {
+		setFilteredProducts(products);
+	}, [products]);
+
+	// Initialize filtered customers on component mount or when customers change
+	useEffect(() => {
+		setFilteredCustomers(customers);
+	}, [customers]);
+
+	// Debounced product search
+	useEffect(() => {
+		if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+
+		const timer = setTimeout(() => {
+			if (productSearch.trim() === "") {
+				setFilteredProducts(products);
+			} else {
+				const query = productSearch.toLowerCase();
+				const filtered = products.filter((product) =>
+					product.name.toLowerCase().includes(query) ||
+					product._id.toLowerCase().includes(query)
+				);
+				setFilteredProducts(filtered);
+			}
+		}, 500); // 300ms debounce
+
+		setSearchDebounceTimer(timer);
+
+		return () => clearTimeout(timer);
+	}, [productSearch, products]);
+
+	// Debounced customer search
+	useEffect(() => {
+		if (customerDebounceTimer) clearTimeout(customerDebounceTimer);
+
+		const timer = setTimeout(() => {
+			if (customerSearch.trim() === "") {
+				setFilteredCustomers(customers);
+			} else {
+				const query = customerSearch.toLowerCase();
+				const filtered = customers.filter((customer) =>
+					customer.name.toLowerCase().includes(query) ||
+					customer.phone.includes(customerSearch) ||
+					customer._id.toLowerCase().includes(query)
+				);
+				setFilteredCustomers(filtered);
+			}
+		}, 500); // 500ms debounce
+
+		setCustomerDebounceTimer(timer);
+
+		return () => clearTimeout(timer);
+	}, [customerSearch, customers]);
 
 	// Calculate interest when relevant fields change
 	useEffect(() => {
@@ -75,7 +145,7 @@ const Transactions = () => {
 		formData.interestDuration,
 		formData.interestTimeUnit,
 		formData.applyInterest,
-		formData.type
+		formData.type,
 	]);
 
 	const fetchInitialData = async () => {
@@ -86,7 +156,7 @@ const Transactions = () => {
 				productAPI.getProducts({ isActive: "true" }),
 			]);
 
-			console.log("trans",transRes,custRes,prodRes);
+			console.log("trans", transRes, custRes, prodRes);
 			setTransactions(transRes.data.transactions);
 			setCustomers(custRes.data.customers);
 			setProducts(prodRes.data.products);
@@ -98,24 +168,32 @@ const Transactions = () => {
 	};
 
 	const calculateInterestAmount = () => {
-		const principal = parseFloat(formData.amount)- parseFloat(formData.initialPayment);
+		const principal =
+			parseFloat(formData.amount) - parseFloat(formData.initialPayment);
 		const rate = parseFloat(formData.interestRate);
 		const time = parseFloat(formData.interestDuration);
 
-		if (!principal || !rate || !time || principal <= 0 || rate <= 0 || time <= 0) {
+		if (
+			!principal ||
+			!rate ||
+			!time ||
+			principal <= 0 ||
+			rate <= 0 ||
+			time <= 0
+		) {
 			setCalculatedInterest(0);
 			return;
 		}
 
 		let timeInYears = 0;
-		switch(formData.interestTimeUnit) {
-			case 'days':
+		switch (formData.interestTimeUnit) {
+			case "days":
 				timeInYears = time / 365;
 				break;
-			case 'months':
+			case "months":
 				timeInYears = time / 12;
 				break;
-			case 'years':
+			case "years":
 				timeInYears = time;
 				break;
 			default:
@@ -128,19 +206,19 @@ const Transactions = () => {
 
 	const handleChange = (e) => {
 		const { name, value, type, checked } = e.target;
-		const newValue = type === 'checkbox' ? checked : value;
-   
+		const newValue = type === "checkbox" ? checked : value;
+
 		setFormData((prev) => ({ ...prev, [name]: newValue }));
 		if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
 
 		// Reset interest when switching to payment
 		if (name === "type" && value === "payment") {
-			setFormData(prev => ({
+			setFormData((prev) => ({
 				...prev,
 				applyInterest: false,
 				interestRate: "",
 				interestDuration: "",
-				interestTimeUnit: "months"
+				interestTimeUnit: "months",
 			}));
 			setCalculatedInterest(0);
 		}
@@ -148,10 +226,13 @@ const Transactions = () => {
 		// Update selected customer balance when customer changes
 		if (name === "customerId") {
 			const customer = customers.find((c) => c._id === value);
+			console.log("cust", customer);
 			setSelectedCustomerBalance(
 				customer
 					? {
-							outstanding: customer.outstandingBalance || 0,
+							outstanding:
+								customer.outstandingBalance +
+									customer.totalInterest || 0,
 							totalPaid: customer.totalPaidAmount || 0,
 							totalPurchase: customer.totalPurchaseAmount || 0,
 					  }
@@ -170,10 +251,16 @@ const Transactions = () => {
 
 		// Validate interest fields if interest is enabled
 		if (formData.type === "purchase" && formData.applyInterest) {
-			if (!formData.interestRate || parseFloat(formData.interestRate) <= 0) {
+			if (
+				!formData.interestRate ||
+				parseFloat(formData.interestRate) <= 0
+			) {
 				newErrors.interestRate = "Interest rate must be greater than 0";
 			}
-			if (!formData.interestDuration || parseFloat(formData.interestDuration) <= 0) {
+			if (
+				!formData.interestDuration ||
+				parseFloat(formData.interestDuration) <= 0
+			) {
 				newErrors.interestDuration = "Duration must be greater than 0";
 			}
 		}
@@ -181,19 +268,24 @@ const Transactions = () => {
 		// Validate initial payment for purchase transactions
 		if (formData.type === "purchase" && formData.initialPayment) {
 			const initialPayment = parseFloat(formData.initialPayment);
-			const totalAmount = parseFloat(formData.amount) + calculatedInterest;
+			const totalAmount =
+				parseFloat(formData.amount) + calculatedInterest;
 
 			if (initialPayment < 0) {
 				newErrors.initialPayment = "Initial payment cannot be negative";
 			} else if (initialPayment > totalAmount) {
-				newErrors.initialPayment = `Initial payment cannot exceed total amount (₹${totalAmount.toFixed(2)})`;
+				newErrors.initialPayment = `Initial payment cannot exceed total amount (₹${totalAmount.toFixed(
+					2
+				)})`;
 			}
 		}
 
 		// Check for overpayment on payment transactions
 		if (formData.type === "payment" && selectedCustomerBalance) {
 			const paymentAmount = parseFloat(formData.amount);
+
 			const outstandingAmount = selectedCustomerBalance.outstanding;
+			console.log("trdddd", outstandingAmount, paymentAmount);
 
 			if (paymentAmount > outstandingAmount) {
 				newErrors.amount = `Payment cannot exceed outstanding balance (₹${parseFloat(
@@ -212,13 +304,78 @@ const Transactions = () => {
 				parseFloat(formData.quantity) *
 				parseFloat(formData.pricePerUnit);
 			setFormData((prev) => ({ ...prev, amount: amount.toFixed(2) }));
+		} else if (addedProducts.length > 0) {
+			// Calculate total from added products
+			const total = addedProducts.reduce((sum, product) => {
+				return sum + product.total;
+			}, 0);
+			setFormData((prev) => ({ ...prev, amount: total.toFixed(2) }));
 		}
+	};
+
+	const addProduct = () => {
+		if (
+			!tempProductForm.productId ||
+			!tempProductForm.quantity ||
+			!tempProductForm.pricePerUnit
+		) {
+			setAlert({
+				type: "error",
+				message: "Please fill all product fields",
+			});
+			return;
+		}
+
+		const productTotal =
+			parseFloat(tempProductForm.quantity) *
+			parseFloat(tempProductForm.pricePerUnit);
+
+		const productName = products.find(
+			(p) => p._id === tempProductForm.productId
+		)?.name;
+
+		const newProduct = {
+			id: Date.now(),
+			productId: tempProductForm.productId,
+			productName: productName,
+			quantity: parseFloat(tempProductForm.quantity),
+			pricePerUnit: parseFloat(tempProductForm.pricePerUnit),
+			total: parseFloat(productTotal.toFixed(2)),
+		};
+
+		setAddedProducts([...addedProducts, newProduct]);
+		setTempProductForm({ productId: "", quantity: "", pricePerUnit: "" });
+	};
+
+	const removeProduct = (id) => {
+		setAddedProducts(addedProducts.filter((product) => product.id !== id));
+	};
+
+	const getTotalProductsAmount = () => {
+		return addedProducts.reduce((sum, product) => sum + product.total, 0);
+	};
+
+	const handleProductSearch = (e) => {
+		setProductSearch(e.target.value);
+	};
+
+	const handleCustomerSearch = (e) => {
+		setCustomerSearch(e.target.value);
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!validateForm()) return;
 
+		const tempProductId = addedProducts.map((p) => ({
+			product: p.productId, // This is the productId from frontend
+			name: p.productName,
+			quantity: p.quantity,
+			pricePerUnit: p.pricePerUnit,
+			totalPrice: p.total,
+		}));
+
+		console.log("tempProductId", tempProductId);
 		try {
 			const submitData = {
 				customerId: formData.customerId,
@@ -230,7 +387,7 @@ const Transactions = () => {
 				pricePerUnit: formData.pricePerUnit
 					? parseFloat(formData.pricePerUnit)
 					: undefined,
-				productId: formData.productId || undefined,
+				productId: tempProductId || undefined,
 				description: formData.description,
 				notes: formData.notes,
 				initialPayment:
@@ -239,15 +396,18 @@ const Transactions = () => {
 						: undefined,
 				sendSMS: formData.sendSMS,
 				// Interest fields
-				applyInterest: formData.type === "purchase" && formData.applyInterest,
-				interestRate: formData.applyInterest && formData.interestRate 
-					? parseFloat(formData.interestRate) 
-					: undefined,
-				interestDuration: formData.applyInterest && formData.interestDuration 
-					? parseFloat(formData.interestDuration) 
-					: undefined,
-				interestTimeUnit: formData.applyInterest 
-					? formData.interestTimeUnit 
+				applyInterest:
+					formData.type === "purchase" && formData.applyInterest,
+				interestRate:
+					formData.applyInterest && formData.interestRate
+						? parseFloat(formData.interestRate)
+						: undefined,
+				interestDuration:
+					formData.applyInterest && formData.interestDuration
+						? parseFloat(formData.interestDuration)
+						: undefined,
+				interestTimeUnit: formData.applyInterest
+					? formData.interestTimeUnit
 					: undefined,
 			};
 
@@ -283,7 +443,13 @@ const Transactions = () => {
 			applyInterest: false,
 			interestRate: "",
 			interestDuration: "",
-			interestTimeUnit: "months"
+			interestTimeUnit: "months",
+		});
+		setAddedProducts([]);
+		setTempProductForm({
+			productId: "",
+			quantity: "",
+			pricePerUnit: "",
 		});
 		setEditingId(transaction._id);
 		setShowForm(true);
@@ -316,11 +482,21 @@ const Transactions = () => {
 			applyInterest: false,
 			interestRate: "",
 			interestDuration: "",
-			interestTimeUnit: "months"
+			interestTimeUnit: "months",
 		});
 		setSelectedCustomerBalance(null);
 		setShowProductDetails(false);
 		setCalculatedInterest(0);
+		setAddedProducts([]);
+		setTempProductForm({
+			productId: "",
+			quantity: "",
+			pricePerUnit: "",
+		});
+		setProductSearch("");
+		setFilteredProducts(products);
+		setCustomerSearch("");
+		setFilteredCustomers(customers);
 		setEditingId(null);
 		setShowForm(false);
 		setErrors({});
@@ -363,8 +539,14 @@ const Transactions = () => {
 		type: t.type,
 		amount: `₹${parseFloat(t.amount).toFixed(2)}`,
 		inital_amount: `₹${parseFloat(t.initialPayment).toFixed(2)}`,
-		interest: t.interest ? `₹${parseFloat(t.interest).toFixed(2)}` : "₹0.00",
-		balance: `₹${parseFloat(t.balanceAfterTransaction).toFixed(2)}`,
+		interest: t.interest
+			? `₹${parseFloat(t.interest).toFixed(2)}`
+			: "₹0.00",
+		balance: `₹${
+			parseFloat(t.balanceAfterTransaction).toFixed(2) > 0
+				? parseFloat(t.balanceAfterTransaction).toFixed(2)
+				: 0
+		}`,
 		date: new Date(t.date).toLocaleDateString(),
 		transactionId: t._id,
 	}));
@@ -524,13 +706,35 @@ const Transactions = () => {
 							onSubmit={handleSubmit}
 							className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
 						>
+							{/* Customer Search Input */}
+							<div className="sm:col-span-2">
+								<label className="block text-xs font-medium text-gray-600 mb-2">
+									🔍 Search Customer by Name, Phone or ID
+								</label>
+								<input
+									type="text"
+									placeholder="Type customer name, phone or ID..."
+									value={customerSearch}
+									onChange={handleCustomerSearch}
+									className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+								/>
+								{customerSearch && (
+									<p className="text-xs text-gray-500 mt-1">
+										Found {filteredCustomers.length} customer(s)
+									</p>
+								)}
+							</div>
+
 							<Select
 								label={t("selectCustomer")}
 								name="customerId"
 								value={formData.customerId}
 								onChange={handleChange}
 								error={errors.customerId}
-								options={customerOptions}
+								options={filteredCustomers.map((c) => ({
+									value: c._id,
+									label: `${c.name} (${c.phone})`,
+								}))}
 							/>
 
 							<Select
@@ -564,12 +768,13 @@ const Transactions = () => {
 									error={errors.initialPayment}
 									placeholder={
 										formData.amount
-											? `0 to ₹${getTotalWithInterest().toFixed(2)}`
+											? `0 to ₹${getTotalWithInterest().toFixed(
+													2
+											  )}`
 											: "0"
 									}
 								/>
 							)}
-
 
 							{formData.customerId &&
 								formData.type === "payment" &&
@@ -624,7 +829,7 @@ const Transactions = () => {
 										</p>
 									</div>
 								)}
-{/* TODO */}
+							{/* TODO */}
 							{formData.type === "purchase" && (
 								<Checkbox
 									name="showProductDetails"
@@ -640,35 +845,187 @@ const Transactions = () => {
 							{formData.type === "purchase" &&
 								showProductDetails && (
 									<>
-										<Select
-											label={t("selectProduct")}
-											name="productId"
-											value={formData.productId}
-											onChange={handleChange}
-											options={productOptions}
-										/>
-										<Input
-											label={t("quantity")}
-											name="quantity"
-											type="number"
-											step="0.01"
-											min="0.01"
-											value={formData.quantity}
-											onChange={handleChange}
-										/>
-										<Input
-											label={t("pricePerUnit")}
-											name="pricePerUnit"
-											type="number"
-											step="0.01"
-											min="0.01"
-											value={formData.pricePerUnit}
-											onChange={handleChange}
-										/>
+										<div className="sm:col-span-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+											<h3 className="text-sm font-semibold text-gray-700 mb-4">
+												Add Products
+											</h3>
+
+											{/* Product Search Input */}
+											<div className="mb-3">
+												<label className="block text-xs font-medium text-gray-600 mb-2">
+													🔍 Search Product by Name or ID
+												</label>
+												<input
+													type="text"
+													placeholder="Type product name or ID..."
+													value={productSearch}
+													onChange={handleProductSearch}
+													className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+												/>
+												{productSearch && (
+													<p className="text-xs text-gray-500 mt-1">
+														Found {filteredProducts.length} product(s)
+													</p>
+												)}
+											</div>
+
+											<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+												<Select
+													label={t("selectProduct")}
+													name="productId"
+													value={
+														tempProductForm.productId
+													}
+													onChange={(e) =>
+														setTempProductForm(
+															(prev) => ({
+																...prev,
+																productId:
+																	e.target
+																		.value,
+															})
+														)
+													}
+													options={filteredProducts.map(
+														(p) => ({
+															value: p._id,
+															label: `${p.name} (${p.unit})`,
+														})
+													)}
+												/>
+												<Input
+													label={t("quantity")}
+													name="quantity"
+													type="number"
+													step="0.01"
+													min="0.01"
+													value={
+														tempProductForm.quantity
+													}
+													onChange={(e) =>
+														setTempProductForm(
+															(prev) => ({
+																...prev,
+																quantity:
+																	e.target
+																		.value,
+															})
+														)
+													}
+												/>
+												<Input
+													label={t("pricePerUnit")}
+													name="pricePerUnit"
+													type="number"
+													step="0.01"
+													min="0.01"
+													value={
+														tempProductForm.pricePerUnit
+													}
+													onChange={(e) =>
+														setTempProductForm(
+															(prev) => ({
+																...prev,
+																pricePerUnit:
+																	e.target
+																		.value,
+															})
+														)
+													}
+												/>
+											</div>
+											<Button
+												type="button"
+												variant="primary"
+												onClick={addProduct}
+												className="w-full"
+											>
+												<Plus size={16} />
+												Add Product
+											</Button>
+
+											{addedProducts.length > 0 && (
+												<div className="mt-4">
+													<h4 className="text-sm font-semibold text-gray-700 mb-3">
+														Added Products (
+														{addedProducts.length})
+													</h4>
+													<div className="space-y-2">
+														{addedProducts.map(
+															(product) => (
+																<div
+																	key={
+																		product.id
+																	}
+																	className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200"
+																>
+																	<div className="flex-1">
+																		<p className="text-sm font-medium text-gray-800">
+																			{
+																				product.productName
+																			}
+																		</p>
+																		<p className="text-xs text-gray-600">
+																			{product.quantity.toFixed(
+																				2
+																			)}{" "}
+																			× ₹
+																			{product.pricePerUnit.toFixed(
+																				2
+																			)}{" "}
+																			={" "}
+																			<span className="font-semibold text-green-600">
+																				₹
+																				{product.total.toFixed(
+																					2
+																				)}
+																			</span>
+																		</p>
+																	</div>
+																	<button
+																		type="button"
+																		onClick={() =>
+																			removeProduct(
+																				product.id
+																			)
+																		}
+																		className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+																		title="Remove product"
+																	>
+																		<Trash2
+																			size={
+																				16
+																			}
+																		/>
+																	</button>
+																</div>
+															)
+														)}
+													</div>
+
+													{addedProducts.length >
+														0 && (
+														<div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+															<div className="flex justify-between items-center">
+																<span className="text-sm font-semibold text-blue-800">
+																	Total
+																	Products
+																	Amount:
+																</span>
+																<span className="text-lg font-bold text-blue-600">
+																	₹
+																	{getTotalProductsAmount().toFixed(
+																		2
+																	)}
+																</span>
+															</div>
+														</div>
+													)}
+												</div>
+											)}
+										</div>
 									</>
 								)}
-
-							
 
 							{formData.type === "purchase" && (
 								<>
@@ -687,12 +1044,13 @@ const Transactions = () => {
 													📊 Interest Calculator
 												</p>
 												<p className="text-xs text-purple-700">
-													Formula: (Principal × Rate × Time) / 100
+													Formula: (Principal × Rate ×
+													Time) / 100
 												</p>
 											</div>
 
 											<Input
-												label="Interest Rate (%)"
+												label={t("interestRate")}
 												name="interestRate"
 												type="number"
 												step="0.01"
@@ -704,115 +1062,162 @@ const Transactions = () => {
 											/>
 
 											<Input
-												label="Interest Duration"
+												label={t("InterestDuration")}
 												name="interestDuration"
 												type="number"
 												step="0.01"
 												min="0.01"
-												value={formData.interestDuration}
+												value={
+													formData.interestDuration
+												}
 												onChange={handleChange}
 												error={errors.interestDuration}
 												placeholder="e.g., 6"
 											/>
 
 											<Select
-												label="Time Unit"
+												label={t("timeUnit")}
 												name="interestTimeUnit"
-												value={formData.interestTimeUnit}
+												value={
+													formData.interestTimeUnit
+												}
 												onChange={handleChange}
 												options={timeUnitOptions}
 											/>
 
-
-
-											{calculatedInterest > 0 && formData.amount && (
-												<div className="sm:col-span-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-													<div className="grid grid-cols-4 gap-2">
-														<div>
-															<p className="text-xs text-gray-600">Principal</p>
-															<p className="font-semibold text-indigo-700">
-																₹{parseFloat(formData.amount).toFixed(2)-parseFloat(formData.initialPayment).toFixed(2)}
-															</p>
-														</div>
-														<div>
-															<p className="text-xs text-gray-600">Interest</p>
-															<p className="font-semibold text-orange-600">
-																₹{calculatedInterest.toFixed(2)}
-															</p>
-														</div>
-														<div>
-															<p className="text-xs text-gray-600">Total Amount</p>
-															<p className="font-semibold text-green-600">
-																₹{getTotalWithInterest().toFixed(2)}
-															</p>
-														</div>
-														<div>
-															<p className="text-xs text-gray-600">Rate & Time</p>
-															<p className="font-semibold text-blue-600">
-																{formData.interestRate}% / {formData.interestDuration} {formData.interestTimeUnit}
-															</p>
+											{calculatedInterest > 0 &&
+												formData.amount && (
+													<div className="sm:col-span-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+														<div className="grid grid-cols-4 gap-2">
+															<div>
+																<p className="text-xs text-gray-600">
+																	Principal
+																</p>
+																<p className="font-semibold text-indigo-700">
+																	₹
+																	{parseFloat(
+																		formData.amount
+																	).toFixed(
+																		2
+																	) -
+																		parseFloat(
+																			formData.initialPayment
+																		).toFixed(
+																			2
+																		)}
+																</p>
+															</div>
+															<div>
+																<p className="text-xs text-gray-600">
+																	Interest
+																</p>
+																<p className="font-semibold text-orange-600">
+																	₹
+																	{calculatedInterest.toFixed(
+																		2
+																	)}
+																</p>
+															</div>
+															<div>
+																<p className="text-xs text-gray-600">
+																	Total Amount
+																</p>
+																<p className="font-semibold text-green-600">
+																	₹
+																	{getTotalWithInterest().toFixed(
+																		2
+																	)}
+																</p>
+															</div>
+															<div>
+																<p className="text-xs text-gray-600">
+																	Rate & Time
+																</p>
+																<p className="font-semibold text-blue-600">
+																	{
+																		formData.interestRate
+																	}
+																	% /{" "}
+																	{
+																		formData.interestDuration
+																	}{" "}
+																	{
+																		formData.interestTimeUnit
+																	}
+																</p>
+															</div>
 														</div>
 													</div>
-												</div>
-											)}
+												)}
 										</>
 									)}
 								</>
 							)}
 
-							
-							{formData.type === "purchase" && formData.amount && !formData.applyInterest && (
-								<div className="sm:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-									<p className="text-sm text-blue-800 mb-2">
-										<span className="font-semibold">
-											Payment Summary:
-										</span>
-									</p>
-									<div className="grid grid-cols-4 gap-2">
-										<div>
-											<p className="text-xs text-gray-600">
-												Base Purchase
-											</p>
-											<p className="font-semibold text-blue-700">
-												₹{parseFloat(formData.amount).toFixed(2)}
-											</p>
-										</div>
-										<div>
-											<p className="text-xs text-gray-600">
-												Interest
-											</p>
-											<p className="font-semibold text-orange-600">
-												₹{calculatedInterest.toFixed(2)}
-											</p>
-										</div>
-										<div>
-											<p className="text-xs text-gray-600">
-												Initial Payment
-											</p>
-											<p className="font-semibold text-green-700">
-												₹
-												{formData.initialPayment
-													? parseFloat(formData.initialPayment).toFixed(2)
-													: "0.00"}
-											</p>
-										</div>
-										<div>
-											<p className="text-xs text-gray-600">
-												Outstanding
-											</p>
-											<p className="font-semibold text-red-700">
-												₹
-												{(
-													getTotalWithInterest() -
-													(formData.initialPayment
-														? parseFloat(formData.initialPayment)
-														: 0)
-												).toFixed(2)}
-											</p>
+							{formData.type === "purchase" &&
+								formData.amount &&
+								!formData.applyInterest && (
+									<div className="sm:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+										<p className="text-sm text-blue-800 mb-2">
+											<span className="font-semibold">
+												Payment Summary:
+											</span>
+										</p>
+										<div className="grid grid-cols-4 gap-2">
+											<div>
+												<p className="text-xs text-gray-600">
+													Base Purchase
+												</p>
+												<p className="font-semibold text-blue-700">
+													₹
+													{parseFloat(
+														formData.amount
+													).toFixed(2)}
+												</p>
+											</div>
+											<div>
+												<p className="text-xs text-gray-600">
+													Interest
+												</p>
+												<p className="font-semibold text-orange-600">
+													₹
+													{calculatedInterest.toFixed(
+														2
+													)}
+												</p>
+											</div>
+											<div>
+												<p className="text-xs text-gray-600">
+													Initial Payment
+												</p>
+												<p className="font-semibold text-green-700">
+													₹
+													{formData.initialPayment
+														? parseFloat(
+																formData.initialPayment
+														  ).toFixed(2)
+														: "0.00"}
+												</p>
+											</div>
+											<div>
+												<p className="text-xs text-gray-600">
+													Outstanding
+												</p>
+												<p className="font-semibold text-red-700">
+													₹
+													{(
+														getTotalWithInterest() -
+														(formData.initialPayment
+															? parseFloat(
+																	formData.initialPayment
+															  )
+															: 0)
+													).toFixed(2)}
+												</p>
+											</div>
 										</div>
 									</div>
-								</div>
-							)}
+								)}
 
 							<Input
 								label={t("description")}
@@ -825,13 +1230,7 @@ const Transactions = () => {
 										: "E.g., Partial payment"
 								}
 							/>
-							<Input
-								label={t("notes")}
-								name="notes"
-								value={formData.notes}
-								onChange={handleChange}
-								className="sm:col-span-2"
-							/>
+
 							<Checkbox
 								name="sendSMS"
 								checked={formData.sendSMS}
@@ -872,10 +1271,9 @@ const Transactions = () => {
 								t("transactionType"),
 								t("amount"),
 								t("Initial_amount"),
-								t("Interest"),
+								t("interest"),
 								t("balance"),
 								"Date",
-								
 							]}
 							data={tableData}
 							actions={(row) => (

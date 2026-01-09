@@ -43,6 +43,13 @@ const hi = {
     noCustomers: 'कोई ग्राहक नहीं मिला',
     addNewCustomer: 'नया ग्राहक जोड़ें',
     customerBalance: 'ग्राहक शेष सारांश',
+    TotalInterest:'कुल ब्याज',
+    interest:"ब्याज",
+    Initial_amount:"प्रारंभिक राशि",
+    interestRate:"ब्याज दर",
+    InterestDuration:"ब्याज की अवधि",
+    timeUnit:"समय की इकाई",
+    totalOutstandingwith:"कुल बकाया ब्याज-रहित",
     
     // Products
     addProduct: 'उत्पाद जोड़ें',

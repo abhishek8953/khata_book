@@ -26,6 +26,10 @@ const en = {
     haveAccount: 'Already have an account?',
     signUp: 'Sign Up',
     signIn: 'Sign In',
+    TotalInterest:"Total Interest",
+    totalOutstandingwith:"Total outstanding without interest",
+    
+    
     
     // Customers
     addCustomer: 'Add Customer',

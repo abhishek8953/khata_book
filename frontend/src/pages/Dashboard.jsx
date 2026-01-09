@@ -68,7 +68,7 @@ const Dashboard = () => {
             color="yellow"
           />
           <StatCard
-            title={t('totalOutstanding')}
+            title={t('totalOutstandingwith')}
             value={`₹${parseFloat(stats?.totalOutstanding || 0).toFixed(2)}`}
             icon={Wallet}
             color="red"
@@ -105,7 +105,7 @@ const Dashboard = () => {
           <Card>
             <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2 flex items-center space-x-2">
               <TrendingUp className="text-red-300 w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="line-clamp-1">{t('Total Interest')}</span>
+              <span className="line-clamp-1">{t('TotalInterest')}</span>
             </h3>
             <p className="text-2xl sm:text-3xl font-bold text-red-600 break-words">{`₹${parseFloat(stats?.totalInterest || 0).toFixed(2)}`}</p>
           </Card>

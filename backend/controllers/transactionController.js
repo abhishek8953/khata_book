@@ -33,7 +33,7 @@ const calculateDeferredInterest = (principal, rate, startDate, timeUnit) => {
     if (principal == null || rate == null || !startDate) return 0;
 
     const start = new Date(startDate);
-    const now = new Date("2026-02-24T11:21:34.176Z"); // 12/22/2025 current date
+    const now = new Date(); // 12/22/2025 current date
 
     if (isNaN(start.getTime()) || isNaN(now.getTime())) return 0;
     if (now <= start) return 0; // no interest if current date before start
@@ -113,6 +113,7 @@ export const addTransaction = async (req, res) => {
 			interestDuration,
 			interestTimeUnit = "months",
 		} = req.body;
+		console.log("reqTT",req.body);
 
 		const customer = await Customer.findOne({
 			_id: customerId,
@@ -167,9 +168,10 @@ export const addTransaction = async (req, res) => {
 			customer.outstandingBalance += amount - initialPayment;
 			balanceAfterTransaction = customer.outstandingBalance;
 		}
-
+       const totalInterest=getCustomerTotalInterest(customer._id,seller._id);
 		if (type === "payment") {
-			if (amount > customer.outstandingBalance) {
+			if (amount > customer.outstandingBalance+totalInterest) {
+				console.log(amount,customer.outstandingBalance);
 				return res.status(400).json({
 					success: false,
 					message: `Payment cannot exceed outstanding balance (₹${customer.outstandingBalance.toFixed(
@@ -252,12 +254,12 @@ export const getTransactions = async (req, res) => {
 			.limit(parseInt(limit))
 			.skip(parseInt(skip))
 			.populate("customerId", "name phone")
-			.populate("productId", "name")
+			.populate("productId.product", "name unit")
 			.lean(); // ✅ important for mutation
 
 		const enrichedTransactions = transactions.map((tx) => {
 			let calculatedInterest = tx.interest || 0;
-			console.log(tx.amount-tx.initialPayment);
+		
 			if (
 				tx.type === "purchase" &&
 				tx.interestRate &&
@@ -280,7 +282,7 @@ export const getTransactions = async (req, res) => {
 
 
 		const total = await Transaction.countDocuments(query);
-
+  
 		res.json({
 			success: true,
 			transactions: enrichedTransactions,
@@ -308,7 +310,7 @@ export const getTransaction = async (req, res) => {
 			.populate("customerId")
 			.populate("productId")
 			.lean();
-
+       
 		if (!transaction) {
 			return res.status(404).json({
 				success: false,
