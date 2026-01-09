@@ -1,43 +1,64 @@
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: "in-v3.mailjet.com",
-  port: 587,
-  secure: false, // MUST be false for 587
-  auth: {
-    user: process.env.SMS_API_KEY,       // Mailjet API KEY
-    pass: process.env.SMS_SECRET_KEY,    // Mailjet SECRET KEY
-  },
-  tls: {
-    rejectUnauthorized: false, // REQUIRED for Render
-  },
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Mailjet SMTP connection failed:", error);
-  } else {
-    console.log("✅ Mailjet SMTP server is ready");
-  }
-});
-
+/* ==========================================
+   MAILJET REST EMAIL (RENDER SAFE)
+========================================== */
 const sendEmail = async (email, message) => {
   try {
-    const info = await transporter.sendMail({
-      from: `"${process.env.BUSINESS_NAME}" <${process.env.FROM_EMAIL}>`,
-      to: email,
-      subject: "Payment Reminder - E BooK",
-      text: message,
-      html: `<p>${message}</p>`,
+    const apiKey = process.env.SMS_API_KEY;
+    const secretKey = process.env.SMS_SECRET_KEY;
+
+    if (!apiKey || !secretKey) {
+      console.error("❌ Mailjet credentials missing");
+      return { success: false, error: "Mailjet not configured" };
+    }
+
+    const payload = {
+      Messages: [
+        {
+          From: {
+            Email: process.env.FROM_EMAIL,
+            Name: process.env.BUSINESS_NAME,
+          },
+          To: [
+            {
+              Email: email,
+            },
+          ],
+          Subject: "Payment Reminder - E BooK",
+          TextPart: message,
+          HTMLPart: `<p>${message}</p>`,
+        },
+      ],
+    };
+
+    const auth = Buffer.from(`${apiKey}:${secretKey}`).toString("base64");
+
+    const response = await fetch("https://api.mailjet.com/v3.1/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
 
-    console.log("✅ Email sent:", info.messageId);
-    return { success: true, messageId: info.messageId };
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("❌ Mailjet REST error:", data);
+      return { success: false, error: data };
+    }
+
+    console.log("✅ Email sent via Mailjet REST");
+    return {
+      success: true,
+      messageId: data.Messages[0].To[0].MessageID,
+    };
+
   } catch (error) {
-    console.error("❌ Email send failed:", error);
+    console.error("❌ Email send failed:", error.message);
     return { success: false, error: error.message };
   }
 };
