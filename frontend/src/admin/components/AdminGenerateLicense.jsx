@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { adminApi, getAuthHeader } from "../utils/adminApi";
 
 const AdminGenerateLicense = () => {
   const [expireDays, setExpireDays] = useState("");
@@ -13,19 +14,16 @@ const AdminGenerateLicense = () => {
     setError("");
     setLicenseKey("");
     setCopied(false);
+    let body= JSON.stringify({
+          expireDays: expireDays ? Number(expireDays) : undefined,
+        })
 
     try {
-      const res = await fetch("/api/admin/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expireDays: expireDays ? Number(expireDays) : undefined,
-        }),
-      });
+      const res = await adminApi.generateLicence(body);
 
-      const data = await res.json();
+      const data = res.data
 
-      if (!res.ok) {
+      if (!data) {
         throw new Error(data.message || "Failed to generate key");
       }
 

@@ -12,10 +12,34 @@ const transactionSchema = new mongoose.Schema(
 			ref: "Customer",
 			required: true,
 		},
-		productId: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Product",
-		},
+		productId: [
+			{
+				product: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: "Product",
+					required: true,
+				},
+				name: {
+					type: String,
+					required: true,
+				},
+				quantity: {
+					type: Number,
+					required: true,
+					
+				},
+				pricePerUnit: {
+					type: Number,
+					required: true,
+					min: 0,
+				},
+				
+				totalPrice: {
+					type: Number,
+					min: 0,
+				},
+			},
+		],
 		type: {
 			type: String,
 			enum: ["purchase", "payment"],

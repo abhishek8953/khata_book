@@ -377,15 +377,15 @@ router.delete('/admins/:id', superAdminAuth, async (req, res) => {
   }
 });
 
-router.post('/generate', async (req, res) => {
+router.post('/admins/generate',superAdminAuth, async (req, res) => {
 
-  
 	// "key": "LIC-4D11-8E68-9B97"
 
   try {
     const { expireDays } = req.body;
     
     const key = await createLicenseKey(expireDays);
+    
     res.json({ key });
   } catch (error) {
     console.error(error);

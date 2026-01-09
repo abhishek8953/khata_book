@@ -51,6 +51,7 @@ const AppRoutes = () => {
 
 	return (
 		<Routes>
+			
 			{/* Public Routes */}
 			<Route
 				path="/login"
