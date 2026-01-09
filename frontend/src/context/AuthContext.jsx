@@ -9,9 +9,10 @@ import axios from "axios";
 /* =====================================================
    AXIOS INSTANCE
 ===================================================== */
-
+let apiurl=import.meta.env.VITE_API_URL+"/api";
+console.log(apiurl);
 const api = axios.create({
-  baseURL: "/api",
+  baseURL:  apiurl,
   withCredentials: true,
 });
 

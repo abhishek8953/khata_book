@@ -1,7 +1,7 @@
 {
-  "name": "khatabook-backend",
+  "name": "E Book-backend",
   "version": "1.0.0",
-  "description": "MERN Stack Khata Book Application Backend",
+  "description": "MERN Stack E Book Application Backend",
   "main": "server.js",
   "type": "module",
   "scripts": {

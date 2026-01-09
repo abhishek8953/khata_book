@@ -38,7 +38,7 @@ const sendEmail = async (email, message) => {
     const response = await transporter.sendMail({
       from: `${process.env.BUSINESS_NAME} <${process.env.FROM_EMAIL}>`,
       to: email,
-      subject: "Payment Reminder - KhataBook",
+      subject: "Payment Reminder - E BooK",
       text: message,
       html: `<p>${message}</p>`,
     });

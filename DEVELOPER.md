@@ -1,4 +1,4 @@
-# KhataBook - Developer Documentation
+# E Book - Developer Documentation
 
 ## 🏗️ Architecture Overview
 
