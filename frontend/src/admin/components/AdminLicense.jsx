@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import AdminGenerateLicense from "./AdminGenerateLicense";
+import { API_BASE } from "../utils/adminApi";
 
 const AdminLicenses = () => {
   const [licenses, setLicenses] = useState([]);
-
+let adminUrl=API_BASE;
   useEffect(() => {
-    fetch("/api/admin/licenses")
+    fetch(API_BASE+"/licenses")
       .then((res) => res.json())
       .then((res) => {
         setLicenses(res || []);
