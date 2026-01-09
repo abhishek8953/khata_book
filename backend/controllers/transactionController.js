@@ -521,11 +521,12 @@ export const sendBalanceNotification = async (req, res) => {
 		}
 
 		console.log("seller,",seller);
+		let sellerName=seller.name+" "+"["+seller.businessName+"]";
 		const message = getSMSMessage(
 			seller.language,
 			"balanceNotification",
 			customer.name,
-			seller.name,
+			sellerName,
 			customer.outstandingBalance
 		);
 		// await sendSms(customer.phone, message);

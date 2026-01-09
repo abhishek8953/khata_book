@@ -3,50 +3,41 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-/* ==========================================
-   CREATE MAILJET TRANSPORTER
-========================================== */
-let transporter = null;
+const transporter = nodemailer.createTransport({
+  host: "in-v3.mailjet.com",
+  port: 587,
+  secure: false, // MUST be false for 587
+  auth: {
+    user: process.env.SMS_API_KEY,       // Mailjet API KEY
+    pass: process.env.SMS_SECRET_KEY,    // Mailjet SECRET KEY
+  },
+  tls: {
+    rejectUnauthorized: false, // REQUIRED for Render
+  },
+});
 
-if (process.env.SMS_API_KEY && process.env.SMS_SECRET_KEY) {
-  transporter = nodemailer.createTransport({
-    host: "in-v3.mailjet.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.SMS_API_KEY,
-      pass: process.env.SMS_SECRET_KEY,
-    },
-  });
-}
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Mailjet SMTP connection failed:", error);
+  } else {
+    console.log("✅ Mailjet SMTP server is ready");
+  }
+});
 
-/* ==========================================
-   SEND EMAIL (SAME STYLE AS sendSMS)
-========================================== */
 const sendEmail = async (email, message) => {
   try {
-    if (!transporter) {
-      console.log(
-        "Email Service not configured. Message would be sent to:",
-        email,
-        "Message:",
-        message
-      );
-      return { success: true, message: "Email service not configured" };
-    }
-
-    const response = await transporter.sendMail({
-      from: `${process.env.BUSINESS_NAME} <${process.env.FROM_EMAIL}>`,
+    const info = await transporter.sendMail({
+      from: `"${process.env.BUSINESS_NAME}" <${process.env.FROM_EMAIL}>`,
       to: email,
       subject: "Payment Reminder - E BooK",
       text: message,
       html: `<p>${message}</p>`,
     });
 
-    console.log("Email sent successfully:", response.messageId);
-    return { success: true, messageId: response.messageId };
+    console.log("✅ Email sent:", info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending Email:", error.message);
+    console.error("❌ Email send failed:", error);
     return { success: false, error: error.message };
   }
 };
