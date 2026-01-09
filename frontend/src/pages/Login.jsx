@@ -53,7 +53,7 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2 text-center">KhataBook</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2 text-center">E BooK</h1>
         <p className="text-gray-600 text-center mb-6 text-sm sm:text-base">{t('login')}</p>
 
         {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}

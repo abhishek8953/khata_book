@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE } from '../utils/adminApi';
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -12,9 +13,10 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+let adminUrl=API_BASE;
+console.log(adminUrl);
     try {
-      const response = await axios.post('/api/admin/login', credentials);
+      const response = await axios.post(adminUrl+'/login', credentials);
       localStorage.setItem('adminToken', response.data.token);
       localStorage.setItem('adminUser', JSON.stringify(response.data.admin));
       navigate('/admin/dashboard');

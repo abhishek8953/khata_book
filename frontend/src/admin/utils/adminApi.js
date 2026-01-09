@@ -1,12 +1,14 @@
 import axios from "axios";
 
-const API_BASE = "/api/admin";
+export const API_BASE =  import.meta.env.VITE_API_URL+"/api/admin"
+console.log(API_BASE);
 
 export const getAuthHeader = () => ({
 	Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
 });
 
 export const adminApi = {
+	
 	// Dashboard
 	getDashboardStats: () =>
 		axios.get(`${API_BASE}/dashboard/stats`, { headers: getAuthHeader() }),
