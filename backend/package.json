@@ -1,5 +1,5 @@
 {
-  "name": "E Book-backend",
+  "name": "ebook-backend",
   "version": "1.0.0",
   "description": "MERN Stack E Book Application Backend",
   "main": "server.js",
