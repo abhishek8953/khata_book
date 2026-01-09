@@ -520,10 +520,12 @@ export const sendBalanceNotification = async (req, res) => {
 			});
 		}
 
+		console.log("seller,",seller);
 		const message = getSMSMessage(
 			seller.language,
 			"balanceNotification",
 			customer.name,
+			seller.name,
 			customer.outstandingBalance
 		);
 		// await sendSms(customer.phone, message);
