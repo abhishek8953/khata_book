@@ -3,7 +3,7 @@ import Admin from '../models/Admin.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const db_url=process.env.MONGODB_URI || "mongodb+srv://E_BOOK:Rupesh9758647919@cluster0.tntaznz.mongodb.net/ebook"
+const db_url=process.env.MONGODB_URI 
 const createSuperAdmin = async () => {
     console.log(db_url);
     
