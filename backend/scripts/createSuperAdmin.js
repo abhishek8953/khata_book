@@ -3,7 +3,7 @@ import Admin from '../models/Admin.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const db_url=process.env.MONGODB_URI || "mongodb+srv://abhishektiwarirt39:Abhi1234@cluster0.fjztz10.mongodb.net/user?retryWrites=true&w=majority&appName=Cluster0/EBook"
+const db_url=process.env.MONGODB_URI || "mongodb+srv://E_BOOK:Rupesh9758647919@cluster0.tntaznz.mongodb.net/ebook"
 const createSuperAdmin = async () => {
     console.log(db_url);
     
@@ -11,9 +11,9 @@ const createSuperAdmin = async () => {
     await mongoose.connect(db_url);
     
     const superAdmin = new Admin({
-      username: 'superadmin',
-      email: 'admin@yourdomain.com',
-      password: 'Admin@12345', // Change this!
+      username: 'enter your number',
+      email: 'your email',
+      password: 'your password', // Change this!
       name: 'Super Admin',
       role: 'super_admin',
     });
