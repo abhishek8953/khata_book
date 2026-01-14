@@ -1296,7 +1296,7 @@ const Transactions = () => {
 											className="sm:w-[18px] sm:h-[18px]"
 										/>
 									</button>
-									<button
+									{/* <button
 										onClick={() =>
 											handleDelete(row.transactionId)
 										}
@@ -1307,7 +1307,7 @@ const Transactions = () => {
 											size={16}
 											className="sm:w-[18px] sm:h-[18px]"
 										/>
-									</button>
+									</button> */}
 								</div>
 							)}
 						/>
